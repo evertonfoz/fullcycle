@@ -12,7 +12,7 @@ import {
   export default class CustomerModel extends Model {
     @PrimaryKey
     @Column
-    declare id: string;
+     id: string;
   
     @Column({ allowNull: false })
     declare name: string;

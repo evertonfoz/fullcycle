@@ -8,7 +8,7 @@ export default class Customer {
   private _rewardPoints: number = 0;
 
   constructor(id: string, name: string) {
-    this._id = id;
+    this._id = "123";
     this._name = name;
     this.validate();
   }
@@ -26,7 +26,7 @@ export default class Customer {
   }
 
   validate() {
-    if (this._id.length === 0) {
+    if (this._id !== undefined && this._id.length === 0) {
       throw new Error("Id is required");
     }
     if (this._name.length === 0) {

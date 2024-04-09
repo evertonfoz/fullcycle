@@ -1,3 +1,4 @@
+import { Sequelize } from "sequelize-typescript";
 import Order from "../../../../domain/checkout/entity/order";
 import OrderItem from "../../../../domain/checkout/entity/order_item";
 import Customer from "../../../../domain/customer/entity/customer";
@@ -7,9 +8,35 @@ import CustomerRepository from "../../../customer/repository/sequelize/customer.
 import ProductRepository from "../../../product/repository/sequelize/product.repository";
 import OrderModel from "./order.model";
 import OrderRepository from "./order.repository";
+import CustomerModel from "../../../customer/repository/sequelize/customer.model";
+import ProductModel from "../../../product/repository/sequelize/product.model";
+import OrderItemModel from "./order-item.model";
 
 
 describe("OrderRepository CRUD Tests", () => {
+  let sequelize: Sequelize;
+
+  beforeEach(async () => {
+    sequelize = new Sequelize({
+      dialect: "sqlite",
+      storage: ":memory:",
+      logging: false,
+      sync: { force: true },
+    });
+
+    sequelize.addModels([CustomerModel]);
+    sequelize.addModels([ProductModel]);
+    sequelize.addModels([OrderModel]);
+    sequelize.addModels([OrderItemModel]);
+    await sequelize.sync();
+  });
+
+  afterEach(async () => {
+    await sequelize.close();
+  });
+
+
+  
   let customerRepository: CustomerRepository;
   let productRepository: ProductRepository;
   let orderRepository: OrderRepository;
@@ -86,6 +113,8 @@ describe("OrderRepository CRUD Tests", () => {
   });
 
   it("should update an order", async () => {
+    sequelize.addModels([CustomerModel]);
+
     // Crie um pedido no banco de dados para ser atualizado
     await orderRepository.create(createdOrder);
 
