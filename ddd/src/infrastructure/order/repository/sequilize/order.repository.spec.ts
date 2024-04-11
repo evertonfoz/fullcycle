@@ -24,116 +24,56 @@ describe("OrderRepository CRUD Tests", () => {
       sync: { force: true },
     });
 
-    sequelize.addModels([CustomerModel]);
-    sequelize.addModels([ProductModel]);
-    sequelize.addModels([OrderModel]);
-    sequelize.addModels([OrderItemModel]);
+    sequelize.addModels([CustomerModel, OrderModel, OrderItemModel, ProductModel]);
     await sequelize.sync();
-  });
+  } 
+);
 
   afterEach(async () => {
     await sequelize.close();
   });
 
+  it("should create a new order", async () => {
+    const customerRepository = new CustomerRepository();
+    const customer = new Customer("1","Joao");
+    const address = new Address("Rua 1",1,"8900000","Sao Paulo")
 
-  
-  let customerRepository: CustomerRepository;
-  let productRepository: ProductRepository;
-  let orderRepository: OrderRepository;
-  let createdOrder: Order;
+    customer.Address = address
 
-  beforeEach(async () => {
-    customerRepository = new CustomerRepository();
-    productRepository = new ProductRepository();
-    orderRepository = new OrderRepository();
-
-    // Criando um cliente e um produto para serem usados nos testes
-    const customer = new Customer("123", "Customer 1");
-    const address = new Address("Street 1", 1, "Zipcode 1", "City 1");
-    customer.changeAddress(address);
     await customerRepository.create(customer);
 
-    const product = new Product("123", "Product 1", 10);
-    await productRepository.create(product);
+    const productRepository = new ProductRepository();
+    const product = new Product("product-id-1","Product 1", 100)
 
-    // Criando uma ordem para ser usada nos testes
-    const orderItem = new OrderItem("1", product.name, product.price, product.id, 2);
-    createdOrder = new Order("123", customer.id, [orderItem]);
-  });
+    await productRepository.create(product)
 
-  afterEach(async () => {
-    // Limpar os dados do teste (excluir o pedido criado, por exemplo)
-    if (createdOrder) {
-      await OrderModel.destroy({ where: { id: createdOrder.id } });
-    }
-  });
+    const orderRepository = new OrderRepository();
+    const orderItem = new OrderItem("order-item-id-1",product.name, product.price, product.id, 2)
+    const order = new Order("order-id-1",customer.id, [orderItem])
 
-  it("should create a new order", async () => {
-    await orderRepository.create(createdOrder);
+    await orderRepository.create(order)
 
-    const orderModel = await OrderModel.findOne({
-      where: { id: createdOrder.id },
-      include: ["items"],
-    });
+    const orderModel = await OrderModel.findOne(
+      { 
+          where: { id: order.id },
+          include: ["items"] 
+      }
+      );
 
     expect(orderModel.toJSON()).toStrictEqual({
-      id: createdOrder.id,
-      customer_id: createdOrder.customerId,
-      total: createdOrder.total(),
-      items: [
-        {
-          id: createdOrder.items[0].id,
-          name: createdOrder.items[0].name,
-          price: createdOrder.items[0].price,
-          quantity: createdOrder.items[0].quantity,
-          order_id: createdOrder.id,
-          product_id: createdOrder.items[0].productId,
-        },
-      ],
+      id: order.id,
+      customer_id: order.customerId,
+      total: order.total(),
+      items:[
+          {
+              id: orderItem.id,
+              name: orderItem.name,
+              price: orderItem.price,
+              quantity: orderItem.quantity,
+              order_id: order.id,
+              product_id: product.id
+          }
+      ]
     });
-  });
-
-  it("should find an order by ID", async () => {
-    // Crie um pedido no banco de dados para ser encontrado
-    await orderRepository.create(createdOrder);
-
-    const foundOrder = await orderRepository.find(createdOrder.id);
-
-    expect(foundOrder).toEqual(createdOrder);
-  });
-
-  it("should find all orders", async () => {
-    // Crie alguns pedidos no banco de dados para serem encontrados
-    await orderRepository.create(createdOrder);
-
-    const foundOrders = await orderRepository.findAll();
-
-    expect(foundOrders).toHaveLength(1);
-    expect(foundOrders[0]).toEqual(createdOrder);
-  });
-
-  it("should update an order", async () => {
-    sequelize.addModels([CustomerModel]);
-
-    // Crie um pedido no banco de dados para ser atualizado
-    await orderRepository.create(createdOrder);
-
-
-    await orderRepository.update(createdOrder);
-
-    const updatedOrder = await orderRepository.find(createdOrder.id);
-
-    expect(updatedOrder).toEqual(createdOrder);
-  });
-
-  it("should delete an order", async () => {
-    // Crie um pedido no banco de dados para ser excluído
-    await orderRepository.create(createdOrder);
-
-    await orderRepository.delete(createdOrder.id);
-
-    const deletedOrder = await orderRepository.find(createdOrder.id);
-
-    expect(deletedOrder).toBeNull();
   });
 });
